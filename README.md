@@ -49,7 +49,7 @@ composer update
 
 # Classes
 
-## [ArrayList](ArrayList.php)
+## [ArrayList](src/ArrayList.php)
 Inspired on the Java's common ArrayList this PHP class allows to manage a Collection of elements being internally stored as an array.
 
 ```php
@@ -94,7 +94,7 @@ $alist->count();               // 0
 $alist->isEmpty();             // true
 ```
 
-## [StringBuilder](StringBuilder.php)
+## [StringBuilder](src/StringBuilder.php)
 Inspired on the Java's `StringBuilder` class it allows to construct a `string` calling methods rather than
 using PHP `.`. By default this class concats the 'added' strings using a coma.
 
@@ -125,7 +125,7 @@ Examples:
  ->add('Bye')                           >>> 'HelloBye'
 ```
 
-## [ExceptionsLib](ExceptionsLib.php)
+## [ExceptionsLib](src/ExceptionsLib.php)
 It contains just one method that dumps the exception in Java format's `printStackTrace()` that contains
 much less verbosity than the generic PHP's trace.
 
@@ -142,12 +142,12 @@ try {
 if ($want_to_log_trace) Log::debug(ExceptionsLib::arrayToJavaStyleTrace( debug_backtrace() ));
 ```
 
-## [ImageLib](ImageLib.php)
+## [ImageLib](src/ImageLib.php)
 General functions for image processing.
 > Requires the `intervention/image` package.
 
 
-## [Tools/ClassFinder](Tools/ClassFinder.php)
+## [Tools/ClassFinder](src/Tools/ClassFinder.php)
 Allows to find out PHP class files in a given folder. 
 > Requires the Laravel framework.
 
@@ -170,7 +170,7 @@ $classes_found = collect(
 });
 ```
 
-## [Sockets/ClientSocket](Sockets/ClientSocket.php)
+## [Sockets/ClientSocket](src/Sockets/ClientSocket.php)
 Simple communications with a network socket.
 
 ```php
@@ -180,11 +180,11 @@ return $socket->send(json_encode(['version' => '1', 'data' => 'some data|some mo
 
 > Requires `ext-sockets` in your composer.json file.
 
-## [Models/BasicBean](Models/BasicBean.php)
+## [Models/BasicBean](src/Models/BasicBean.php)
 
-## [Models/BaseBean](Models/BaseBean.php)
+## [Models/BaseBean](src/Models/BaseBean.php)
 
-## [Models/BasicBeanValidated](Models/BasicBeanValidated.php)
+## [Models/BasicBeanValidated](src/Models/BasicBeanValidated.php)
 
 # License and contributions
 MIT License. 
