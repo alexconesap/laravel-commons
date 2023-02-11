@@ -73,9 +73,9 @@ $alist->count();               // 3
 
 $alist->replaceAll($example_array);
 $alist->count();               // 4
-$alist->add('five', 'Hello');
-$alist->add('six',  true);
-$alist->add('seven', 33);
+$alist->set('five', 'Hello');
+$alist->set('six',  true);
+$alist->set('seven', 33);
 $alist->count();               // 7
 
 $alist->get('four');           // '2_$ax1'
