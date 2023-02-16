@@ -1,17 +1,10 @@
 <?php
 
-/**
- * Generic classes
- *
- * PHP version 7.0
- *
- * @author   Yakuma <alexconesap@gmail.com>
- */
-
 namespace Alexconesap\Commons\Models;
 
 use Alexconesap\Commons\Exceptions\InvalidObjectAttributesException;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Collection;
 use stdClass;
 
@@ -219,10 +212,7 @@ class BasicBeanValidated extends BasicBean
      */
     private function isCountable(array $details): bool
     {
-        return $details['type'] &&
-            (
-                ($details['type'] == 'collection') || ($details['type'] == 'array')
-            );
+        return ($details['type'] ?? false) && ($details['type'] == 'collection') || ($details['type'] == 'array');
     }
 
     /**
@@ -246,11 +236,11 @@ class BasicBeanValidated extends BasicBean
      * When $value is null
      *
      * @param string $key
-     * @param mixed $value
+     * @param mixed|null $value
      * @return mixed|null
      * @throws InvalidObjectAttributesException
      */
-    private function getValueFormatted(string $key, $value = null)
+    private function getValueFormatted(string $key, mixed $value = null): mixed
     {
         $details = $this->attributes_details[$key] ?? null;
 
@@ -266,131 +256,137 @@ class BasicBeanValidated extends BasicBean
             }
         }
 
-        switch ($type) {
-            case 'string':
-                $result = (string)$value;
-                break;
-
-            case 'string_lowercase':
-                $result = strtolower($value);
-                break;
-
-            case 'string_uppercase':
-                $result = strtoupper($value);
-                break;
-
-            case 'int':
-            case 'int_timestamp':
-                $result = (int)$value;
-                break;
-
-            case 'float':
-            case 'money':
-                $result = (float)$value;
-                break;
-
-            case 'object':
-                if ($value instanceof BasicBean || $value instanceof stdClass) {
-                    $result = $value;
-                } else {
-                    $va = is_array($value) ? $value : [$value];
-                    $result = $ref_class == null ? new BasicBean($va, false) : new $ref_class($va);
-                }
-                break;
-
-            case 'array_object':
-                if (!is_array($value)) {
-                    $result = $value;
+        try {
+            switch ($type) {
+                case 'string':
+                    $result = (string)$value;
                     break;
-                }
 
-                $result = [];
-                foreach ($value as $v) {
-                    $va = is_array($v) ? $v : [$v];
-                    array_push(
-                        $result,
-                        $ref_class == null ? new BasicBean($va, false) : new $ref_class($va)
-                    );
-                }
-                break;
-
-            case 'array':
-                if (is_array($value)) {
-                    $result = implode('|', $value);
-                } else {
-                    $result = $value;
-                }
-                break;
-
-            case 'array_array':
-                if (is_array($value)) {
-                    $result = $value;
+                case 'string_lowercase':
+                    $result = strtolower($value);
                     break;
-                }
-                $result = [];
-                break;
 
-            case 'collection':
-                if ($value instanceof Collection) {
-                    $result = $value;
-                } else {
-                    // No specific class for Collection elements?
-                    //   Return the Collection directly
-                    if ($ref_class == null) {
-                        $result = new Collection(is_array($value) ? $value : [$value]);
+                case 'string_uppercase':
+                    $result = strtoupper($value);
+                    break;
+
+                case 'int':
+                case 'int_timestamp':
+                    $result = (int)$value;
+                    break;
+
+                case 'float':
+                case 'money':
+                    $result = (float)$value;
+                    break;
+
+                case 'object':
+                    if ($value instanceof BasicBean || $value instanceof stdClass) {
+                        $result = $value;
                     } else {
-                        if (is_array($value)) {
-                            $result = new Collection();
-                            foreach ($value as $item) {
-                                $result->add(new $ref_class($item));
-                            }
+                        $va = is_array($value) ? $value : [$value];
+                        $result = $ref_class == null ? new BasicBean($va, false) : new $ref_class($va);
+                    }
+                    break;
+
+                case 'array_object':
+                    if (!is_array($value)) {
+                        $result = $value;
+                        break;
+                    }
+
+                    $result = [];
+                    foreach ($value as $v) {
+                        $va = is_array($v) ? $v : [$v];
+                        $result[] = $ref_class == null ? new BasicBean($va, false) : new $ref_class($va);
+                    }
+                    break;
+
+                case 'array':
+                    if (is_array($value)) {
+                        $result = implode('|', $value);
+                    } else {
+                        $result = $value;
+                    }
+                    break;
+
+                case 'array_array':
+                    if (is_array($value)) {
+                        $result = $value;
+                        break;
+                    }
+                    $result = [];
+                    break;
+
+                case 'collection':
+                    if ($value instanceof Collection) {
+                        $result = $value;
+                    } else {
+                        // No specific class for Collection elements?
+                        //   Return the Collection directly
+                        if ($ref_class == null) {
+                            $result = new Collection(is_array($value) ? $value : [$value]);
                         } else {
-                            $result = new Collection([$value]);
+                            if (is_array($value)) {
+                                $result = new Collection();
+                                foreach ($value as $item) {
+                                    $result->add(new $ref_class($item));
+                                }
+                            } else {
+                                $result = new Collection([$value]);
+                            }
                         }
                     }
-                }
-                break;
+                    break;
 
-            case 'class':
-                if ($ref_class == null) {
-                    throw new InvalidObjectAttributesException("Null class reference provided for key '$key'");
-                }
-                $result = new $ref_class($value);
-                break;
+                case 'class':
+                    if ($ref_class == null) {
+                        throw new InvalidObjectAttributesException("Null class reference provided for key '$key'");
+                    }
+                    $result = new $ref_class($value);
+                    break;
 
-            case 'bool':
-            case 'boolean':
-                $result = (bool)$value;
-                break;
+                case 'bool':
+                case 'boolean':
+                    $result = (bool)$value;
+                    break;
 
-            case 'yes_no_as_boolean':
-                $result = in_array(strtoupper($value), ['YES', 'Y', 'SI', 'S']);
-                break;
+                case 'yes_no_as_boolean':
+                    $result = in_array(strtoupper($value), ['YES', 'Y', 'SI', 'S']);
+                    break;
 
-            case 'string_percent':
-            case 'string_currency':
-                $result = (string)number_format($value, 2);
-                break;
+                case 'string_percent':
+                case 'string_currency':
+                    $result = (string)number_format($value, 2);
+                    break;
 
-            case 'date_iso8601':
-            case 'date':
-                $result = (string)$value; // Carbon::parse($value);
-                break;
+                case 'date_iso8601':
+                case 'date':
+                    $result = (string)$value; // Carbon::parse($value);
+                    break;
 
-            case 'date_iso8601_carbon_utc':
-                if (empty($value)) $result = null;
-                else $result = Carbon::create($value)->tz('UTC');
-                break;
+                case 'date_iso8601_carbon_utc':
+                    if (empty($value)) $result = null;
+                    else $result = Carbon::create($value)->tz('UTC');
+                    break;
 
-            case 'string_time24_hhmm': // for time formatted as 24h in hours:minutes (no seconds)
-                $result = substr((string)$value, 0, 5);
-                break;
+                case 'string_time24_hhmm': // for time formatted as 24h in hours:minutes (no seconds)
+                    $result = substr((string)$value, 0, 5);
+                    break;
 
-            default:
-                $result = $value;
+                default:
+                    $result = $value;
+            }
+
+            return $result;
+
+        } catch (InvalidObjectAttributesException $ex) {
+            throw $ex;
+
+        } catch (Exception $ex) {
+            $v = is_array($value) ? json_encode($value) : print_r($value, true);
+            throw new InvalidObjectAttributesException(get_class($this) . " raised '" . $ex->getMessage() . "' for key '$key'. Value: " . $v);
         }
-
-        return $result;
     }
 
     /**
@@ -398,7 +394,7 @@ class BasicBeanValidated extends BasicBean
      * those setters it will be called. Otherwise, nothing will happen.
      * @return $this
      */
-    public function formatAttributes()
+    public function formatAttributes(): static
     {
         foreach ($this->attributes as $key => $value) {
             $this->{$key} = $value;
